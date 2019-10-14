@@ -1,4 +1,10 @@
-# PROJECT Info
+# did spike
+
+Quick exploration of decentralized identity tools / technology for conveying identity in healthcare. Goals include:
+
+* Understand technical + UX flow for did-based credentialing protocols
+* Generate verifiable credentials based on EHR patient portal access + phone number
+* Bring to the surface any issues re: query-based patient access to healthcare data in national networks
 
 
 # Documentation
