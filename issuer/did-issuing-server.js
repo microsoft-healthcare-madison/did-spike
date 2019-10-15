@@ -2,6 +2,10 @@ const express = require('express')
 const app = express()
 const port = 3000
 
-app.get('/', (req, res) => res.send('Hello World!'))
+import { createIdentity } from 'nacl-did'
 
-app.listen(port, () => console.log(`Example app listening: http://localhost:${port}!`))
+const identity = createIdentity();
+
+app.get('/', (req, res) => res.json(identity));
+
+app.listen(port, () => console.log(`http://localhost:${port}`));
