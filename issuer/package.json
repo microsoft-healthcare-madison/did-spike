@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/microsoft-healthcare-madison/did-spike#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "esm": "^3.2.25",
+    "express": "^4.17.1",
+    "nacl-did": "^1.0.0"
   }
 }
