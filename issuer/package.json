@@ -2,7 +2,7 @@
   "name": "did-spike-issuer",
   "version": "1.0.0",
   "description": "A DID issuing server.",
-  "main": "did-server.js",
+  "main": "did-issuing-server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
