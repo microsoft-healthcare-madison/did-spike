@@ -46,11 +46,11 @@ Quick exploration of decentralized identity tools / technology for conveying ide
   - Client generates key pair
   - Includes public key as auth key in DID document
   - Tell the Server (register with Resolver) that the Client has this document
-- Client engages in a SMART workflow with the user
+- Client engages in a SMART workflow with the user and a FHIR server
   - Authenticates
   - Passes token to the Server
 - Server uses the token retrieve Patient resource
-- Server should ask the patient for which record to verify (phone/email)
+- Server should ask the patient for which contact point to verify (phone/email)
   - For now, we can push to the client
 - Server needs to perform verification process
   - Twilio / Bandwidth.com / Nexmo / Plivo / ClickSend
