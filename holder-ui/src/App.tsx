@@ -2,6 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 // import logo from './logo.svg';
 import './App.css';
 
+import { createIdentity, loadIdentity } from 'nacl-did'
+
+const identity = createIdentity()
+
+
 // **** extend the Window to include our _env settings ****
 
 declare global {
@@ -31,6 +36,7 @@ export default function App() {
 
   return(
     <div className="App">
+    {JSON.stringify(identity)}
     <h1>Users</h1>
       {users.map(user =>
         <div key={user.id}>{user.username}</div>
