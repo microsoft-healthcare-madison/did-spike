@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.5.1",
+    "@material-ui/icons": "^4.5.1",
     "@types/jest": "24.0.19",
     "@types/node": "12.7.12",
     "@types/react": "16.9.6",
     "@types/react-dom": "16.9.2",
+    "fhirclient": "^2.1.0",
     "nacl-did": "^1.0.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
     "react-scripts": "3.2.0",
+    "react-syntax-highlighter": "^11.0.2",
     "typescript": "3.6.4"
   },
   "scripts": {
