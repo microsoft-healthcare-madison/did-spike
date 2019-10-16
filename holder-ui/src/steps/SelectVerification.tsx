@@ -8,10 +8,14 @@ import {
   FormHelperText, 
   ExpansionPanel, 
   ExpansionPanelSummary, 
-  ExpansionPanelDetails, 
+  ExpansionPanelDetails,
+  IconButton, 
 } from '@material-ui/core';
 
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+
+import { CopyHelper } from '../util/CopyHelper';
+import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs'
@@ -94,6 +98,10 @@ export default function SelectVerification(props: SelectVerificationProps) {
     props.setVerifyMethod(event.target.value);
   }
 
+  function copyDidToClipboard() {
+    CopyHelper.copyToClipboard(patient!);
+  }
+
   return(
     <div className='StepContent'>
       <Typography variant='h6'>
@@ -105,6 +113,13 @@ export default function SelectVerification(props: SelectVerificationProps) {
             expandIcon={<ExpandMoreIcon />}
             >
             Patient Resource
+            <IconButton
+              aria-label='copy'
+              size='small'
+              onClick={copyDidToClipboard}
+              >
+              <FileCopyOutlinedIcon />
+            </IconButton>
           </ExpansionPanelSummary>
           <ExpansionPanelDetails>
             <SyntaxHighlighter
