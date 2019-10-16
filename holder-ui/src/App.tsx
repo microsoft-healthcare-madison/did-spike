@@ -121,6 +121,7 @@ export default function App() {
     // **** build our verification request ****
 
     let request:VerificationRequest = {
+      holderDID: identity!.did,
       fhirBaseUrl: fhirClientRef.current.state.serverUrl,
       authToken: fhirClientRef.current.state.tokenResponse.access_token,
       resourceType: 'Patient',
