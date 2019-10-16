@@ -5,7 +5,7 @@
   "main": "did-issuing-server.js",
   "scripts": {
     "start": "node -r esm did-issuing-server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --passWithNoTests"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,8 @@
     "cors": "^2.8.5",
     "esm": "^3.2.25",
     "express": "^4.17.1",
-    "nacl-did": "^1.0.0"
+    "jest": "^24.9.0",
+    "nacl-did": "^1.0.0",
+    "uuid": "^3.3.3"
   }
 }
