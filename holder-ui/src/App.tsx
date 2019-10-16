@@ -134,6 +134,8 @@ export default function App() {
     // **** build the URL to POST to ****
 
     let url:string = new URL('/verify', window._env.Issuer_Public_Url).toString();
+
+    console.log('URL', url);
  
     // **** prepare our request ****
 
