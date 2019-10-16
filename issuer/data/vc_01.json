@@ -1,0 +1,29 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1", 
+    "our-context-for-fhir-claims" 
+  ], 
+  "type": ["VerifiableCredential", "FhirPatientCredential"], 
+  "issuer": "https://our-demo.org/", 
+  "issuanceDate": "2019-10-01T19:23:24Z", 
+  "expirationDate": "2020-10-01T19:23:24Z ", 
+  "credentialSubject": { 
+    "id": "did:nacl:the-user-did", 
+    "hasVerifiedContactPoint": { 
+      "use": "home", 
+      "system": "phone", 
+      "value": "+16175003253"
+    }, 
+    "hasAccessToFhirResource": { 
+      "fhirServerUrl": "https://healthsystem.example.org", 
+      "resource": { 
+        "resourceType": "Patient", 
+        "id": "123"
+      } 
+    }
+  },
+  "credentialSchema": { 
+    "id": "our-json-schema", 
+    "type": "JsonSchemaValidator2018" 
+  }
+}
