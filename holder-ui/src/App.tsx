@@ -115,7 +115,9 @@ export default function App() {
     });
   }
 
-  function requestVerification() {
+  async function requestVerification() {
+    // **** build our verification request ****
+
     let request:VerificationRequest = {
       fhirBaseUrl: fhirClientRef.current.state.serverUrl,
       authToken: fhirClientRef.current.state.tokenResponse.access_token,
@@ -125,7 +127,31 @@ export default function App() {
       verificationMethod: verifyMethod
     }
 
+    // **** log verification data for now (debug) ****
+    
     console.log('Verify:', request);
+
+    // **** build the URL to POST to ****
+
+    let url:string = new URL('/verify', window._env.Issuer_Public_Url).toString();
+ 
+    // **** prepare our request ****
+
+    let headers: Headers = new Headers();
+    headers.append('Accept', 'application/json');
+    headers.append('Content-Type', 'application/json');
+
+    let response: Response = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(request),
+    });
+
+    let body: string = await response.text();
+
+    // **** log the response for now (debug) ****
+
+    console.log('Verification response:', body);
 
     // **** just move to next step ****
 
