@@ -174,7 +174,7 @@ export default function App() {
 
     let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
 
-    console.log('Encrypted', JSON.stringify(encrypted));
+    console.log('Encrypted', encrypted);
 
     // **** build the URL to POST to ****
 
@@ -245,7 +245,7 @@ export default function App() {
 
     let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
 
-    console.log('Encrypted', JSON.stringify(encrypted));
+    console.log('Encrypted', encrypted);
 
     // **** build the URL to POST to ****
 
