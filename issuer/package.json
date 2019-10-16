@@ -4,6 +4,7 @@
   "description": "A DID issuing server.",
   "main": "did-issuing-server.js",
   "scripts": {
+    "start": "node -r esm did-issuing-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,6 +18,7 @@
   },
   "homepage": "https://github.com/microsoft-healthcare-madison/did-spike#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "esm": "^3.2.25",
     "express": "^4.17.1",
     "nacl-did": "^1.0.0"

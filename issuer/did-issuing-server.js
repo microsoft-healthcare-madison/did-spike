@@ -1,7 +1,15 @@
 const bodyParser = require('body-parser');
 const express = require('express');
+var cors = require('cors');
 const app = express();
-const port = 3000;
+
+// **** configure cors - default configuration is any-origin ****
+
+app.use(cors());
+
+// **** use PORT env variable or 3000 ****
+
+const port = process.env.PORT || 3000;
 
 import { createIdentity } from 'nacl-did';
 
