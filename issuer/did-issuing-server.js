@@ -39,13 +39,15 @@ const verify = (req, res) => {
 
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
-app.use(function (req, res, next) {
-  decorate(res).status(404).send("Sorry can't find that!")
-});
+
 
 app.get('/', (req, res) => res.json(identity));
 app.get('/did', did);
 app.get('/debug', debug);
 app.post('/verify', verify);
+
+app.use(function (req, res, next) {
+  decorate(res).status(404).send("Sorry can't find that!")
+});
 
 app.listen(port, () => console.log(`http://localhost:${port}`));
