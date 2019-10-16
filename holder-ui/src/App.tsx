@@ -15,6 +15,7 @@ import VerificationRequest from './models/VerificationRequest';
 import { ContactPoint } from './util/fhir_selected';
 import EnterCode from './steps/EnterCode';
 import ShowCredential from './steps/ShowCredential';
+import { ConfirmationRequest } from './models/ConfirmationRequest';
 
 // **** extend the Window to include our _env settings ****
 
@@ -42,6 +43,7 @@ export default function App() {
   const [verifyMethod, setVerifyMethod] = useState<string>('sms');
   const [verificationCode, setVerificationCode] = useState<string>('');
   const [credential, setCredential] = useState<string>('');
+  const [verificationId, setVerificationId] = useState<string>('');
 
   useEffect(() => {
     if (initialLoadRef.current) {
@@ -149,28 +151,90 @@ export default function App() {
       body: JSON.stringify(request),
     });
 
-    let body: string = await response.text();
+    // **** check for successful response ****
 
-    // **** log the response for now (debug) ****
+    if (response.ok) {
+      // **** grab the body ****
 
-    console.log('Verification response:', body);
+      let body: string = await response.text();
 
-    // **** just move to next step ****
+      // **** log the response for now (debug) ****
+  
+      console.log('Verification id:', body);
 
-    setActiveStep(activeStep + 1);
+      // **** set our verification id ****
+
+      setVerificationId(body);
+  
+      // **** move to next step ****
+  
+      setActiveStep(activeStep + 1);
+
+      return;
+    }
+
+    // **** request failed ****
+
+    console.log('Request failed', response);
+    window.alert(`Verification request failed (${response.status})!`);
   }
 
-  function checkVerificationCode() {
+  async function checkVerificationCode() {
+    // **** build our verification confirmation request ****
 
-    console.log('User entered code:', verificationCode);
+    let request:ConfirmationRequest = {
+      verificationId: verificationId,
+      verificationCode: verificationCode,
+    }
 
-    // **** invent a credential for now ****
+    console.log('Confirmation', request);
 
-    setCredential('This is a really secure and verifiable credential.  Really.');
+    // **** build the URL to POST to ****
 
-    // **** just move to next step ****
+    let url:string = new URL('/confirm', window._env.Issuer_Public_Url).toString();
 
-    setActiveStep(activeStep + 1);
+    console.log('URL', url);
+ 
+    // **** prepare our request ****
+
+    let headers: Headers = new Headers();
+    headers.append('Accept', 'application/json');
+    headers.append('Content-Type', 'application/json');
+
+    let response: Response = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(request),
+    });
+
+    let body: string = await response.text();
+
+    // **** check for successful response ****
+
+    if (response.ok) {
+      // **** grab the body ****
+
+      let body: string = await response.text();
+
+      // **** log the response for now (debug) ****
+  
+      console.log('Credential:', body);
+
+      // **** set our verification id ****
+
+      setCredential(body);
+  
+      // **** move to next step ****
+  
+      setActiveStep(activeStep + 1);
+
+      return;
+    }
+
+    // **** request failed ****
+
+    console.log('Request failed', response);
+    window.alert(`Confirmation request failed (${response.status})!`);
   }
 
   function handleNext() {
