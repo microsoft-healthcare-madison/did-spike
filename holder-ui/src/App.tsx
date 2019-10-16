@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 
 import './App.css';
 
-import { createIdentity, NaCLIdentity } from 'nacl-did'
+import { createIdentity, NaCLIdentity, Encrypted, loadIdentity } from 'nacl-did'
 
 import { Stepper, StepLabel, Step, Button } from '@material-ui/core';
 
@@ -53,7 +53,7 @@ export default function App() {
       if (localStorage.getItem('did')) {
         // **** use the existing identity ****
 
-        setIdentity(JSON.parse(localStorage.getItem('did')!));
+        setIdentity(loadIdentity(JSON.parse(localStorage.getItem('did')!)));
       } else {
         // **** create an identity ****
 
@@ -117,7 +117,43 @@ export default function App() {
     });
   }
 
+  async function getIssuerDID() {
+
+    // **** ask the server for a DID to encrypt my request ****
+
+    let didUrl:string = new URL('/did', window._env.Issuer_Public_Url).toString();
+
+    // **** prepare our request ****
+
+    let didHeaders: Headers = new Headers();
+    didHeaders.append('Accept', 'text/plain');
+
+    let didResponse: Response = await fetch(didUrl, {
+      method: 'GET',
+      headers: didHeaders,
+    });
+
+    // **** check for successful response ****
+
+    if (!didResponse.ok) {
+      window.alert(`DID request failed (${didResponse.status} - ${didResponse.statusText})`);
+      return undefined;
+    }
+
+    return await didResponse.text();
+  }
+
+
   async function requestVerification() {
+
+    // **** get our issuer DID ****
+
+    let issuerDID = await getIssuerDID();
+
+    if (!issuerDID) {
+      return;
+    }
+
     // **** build our verification request ****
 
     let request:VerificationRequest = {
@@ -132,7 +168,13 @@ export default function App() {
 
     // **** log verification data for now (debug) ****
     
-    console.log('Verify:', request);
+    console.log('Verify', request);
+
+    // **** encrypt our data for the issuer ****
+
+    let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
+
+    console.log('Encrypted', JSON.stringify(encrypted));
 
     // **** build the URL to POST to ****
 
@@ -149,7 +191,7 @@ export default function App() {
     let response: Response = await fetch(url, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(request),
+      body: JSON.stringify(encrypted),
     });
 
     // **** check for successful response ****
@@ -177,10 +219,19 @@ export default function App() {
     // **** request failed ****
 
     console.log('Request failed', response);
-    window.alert(`Verification request failed (${response.status})!`);
+    window.alert(`Verification request failed (${response.status} - ${response.statusText})!`);
   }
 
   async function checkVerificationCode() {
+
+    // **** get our issuer DID ****
+
+    let issuerDID = await getIssuerDID();
+
+    if (!issuerDID) {
+      return;
+    }
+    
     // **** build our verification confirmation request ****
 
     let request:ConfirmationRequest = {
@@ -189,6 +240,12 @@ export default function App() {
     }
 
     console.log('Confirmation', request);
+
+    // **** encrypt our data for the issuer ****
+
+    let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
+
+    console.log('Encrypted', JSON.stringify(encrypted));
 
     // **** build the URL to POST to ****
 
@@ -205,7 +262,7 @@ export default function App() {
     let response: Response = await fetch(url, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(request),
+      body: JSON.stringify(encrypted),
     });
 
     let body: string = await response.text();
