@@ -63,37 +63,40 @@ function convertJwsToVc(jws) {
   }
 }
 
-
 function signJws(jws, identity) {
   jws.iss = identity.did;
   return identity.createJWT(jws);
 }
 
-// **** test code ****
+function testModule() {
+  // **** test code ****
 
-let vc = JSON.parse(fs.readFileSync('./data/vc_01.json'));
+  let vc = JSON.parse(fs.readFileSync('./data/vc_01.json'));
 
-console.log('VC loaded:');
-console.log(JSON.stringify(vc, null, 2));
+  console.log('VC loaded:');
+  console.log(JSON.stringify(vc, null, 2));
 
-// **** convert the VC to a JWS *****
+  // **** convert the VC to a JWS *****
 
-let jws = convertVcToJws(vc);
+  let jws = convertVcToJws(vc);
 
-// **** log ****
+  // **** log ****
 
-console.log('Converted to JWS:');
-console.log(JSON.stringify(jws, null, 2));
+  console.log('Converted to JWS:');
+  console.log(JSON.stringify(jws, null, 2));
 
-let backToVc = convertJwsToVc(jws);
-console.log('Converted back to VC:');
-console.log(JSON.stringify(backToVc, null, 2));
+  let backToVc = convertJwsToVc(jws);
+  console.log('Converted back to VC:');
+  console.log(JSON.stringify(backToVc, null, 2));
 
-console.log(JSON.stringify(jws, null, 2));
+  // **** sign the JWS, just create an identity for testing ****
 
-// **** sign the JWS, just create an identity for testing ****
+  let signed = signJws(jws, createIdentity());
 
-let signed = signJws(jws, createIdentity());
+  console.log('Created JWT:');
+  console.log(signed);
+}
 
-console.log('Created JWT:');
-console.log(signed);
+// **** for testing ****
+
+testModule();
