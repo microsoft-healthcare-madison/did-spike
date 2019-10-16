@@ -11,6 +11,10 @@ import FHIR from 'fhirclient';
 import GenerateDid from './steps/GenerateDID';
 import ConnectToProvider from './steps/ConnectToProvider';
 import SelectVerification from './steps/SelectVerification';
+import VerificationRequest from './models/VerificationRequest';
+import { ContactPoint } from './util/fhir_selected';
+import EnterCode from './steps/EnterCode';
+import ShowCredential from './steps/ShowCredential';
 
 // **** extend the Window to include our _env settings ****
 
@@ -21,11 +25,11 @@ declare global {
 export default function App() {
 
   const steps:string[] = [
-    'Create a DID',
-    'Connect to a Provider',
-    'Select Verification',
-    'Enter Code',
-    'Done'
+    'Create a DID',           // 0
+    'Connect to a Provider',  // 1
+    'Select Verification',    // 2
+    'Enter Code',             // 3
+    'Done'                    // 4
   ];
 
   const initialLoadRef = useRef<boolean>(true);
@@ -34,8 +38,10 @@ export default function App() {
   const [activeStep, setActiveStep] = useState<number>(0);
   const [identity, setIdentity] = useState<NaCLIdentity>();
   const [selectedProvider, setSelectedProvider] = useState<string>();
-  const [verifyPhone, setVerifyPhone] = useState<string>();
+  const [verifyContactPoint, setVerifyContactPoint] = useState<ContactPoint>();
   const [verifyMethod, setVerifyMethod] = useState<string>('sms');
+  const [verificationCode, setVerificationCode] = useState<string>('');
+  const [credential, setCredential] = useState<string>('');
 
   useEffect(() => {
     if (initialLoadRef.current) {
@@ -60,6 +66,12 @@ export default function App() {
         localStorage.setItem('did', JSON.stringify(genId));
       }
 
+      // **** check for stored provider URL ****
+
+      if (localStorage.getItem('providerUrl')) {
+        setSelectedProvider(localStorage.getItem('providerUrl')!);
+      }
+
       // **** check for a SMART return ****
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -73,9 +85,9 @@ export default function App() {
 
             fhirClientRef.current = client;
 
-            console.log('client', client);
+            // **** log client for now (debug) ****
 
-            // client.request('Patient').then(console.log);
+            console.log('SMART Client', client);
 
             // **** move to third step (zero-based) ****
 
@@ -95,9 +107,7 @@ export default function App() {
     }
   }
 
-
   function smartLaunch() {
-
     FHIR.oauth2.authorize({
       'client_id': 'did_spike_holder',
       'scope': 'patient/Patient.read, launch/patient',
@@ -105,14 +115,58 @@ export default function App() {
     });
   }
 
-  function handleNext() {
-
-    if (activeStep === 1) {
-      smartLaunch();
+  function requestVerification() {
+    let request:VerificationRequest = {
+      fhirBaseUrl: fhirClientRef.current.state.serverUrl,
+      authToken: fhirClientRef.current.state.tokenResponse.access_token,
+      resourceType: 'Patient',
+      resourceId: fhirClientRef.current.patient.id,
+      contactPoint: verifyContactPoint!,
+      verificationMethod: verifyMethod
     }
 
-    if ((activeStep + 1) < steps.length) {
-      setActiveStep(activeStep + 1);
+    console.log('Verify:', request);
+
+    // **** just move to next step ****
+
+    setActiveStep(activeStep + 1);
+  }
+
+  function checkVerificationCode() {
+
+    console.log('User entered code:', verificationCode);
+
+    // **** invent a credential for now ****
+
+    setCredential('This is a really secure and verifiable credential.  Really.');
+
+    // **** just move to next step ****
+
+    setActiveStep(activeStep + 1);
+  }
+
+  function handleNext() {
+
+    // **** act depending on current step ****
+
+    switch (activeStep) {
+      case 1:
+        smartLaunch();
+        break;
+
+      case 2:
+        requestVerification();
+        break;
+
+      case 3:
+        checkVerificationCode();
+        break;
+
+      default:
+        if ((activeStep + 1) < steps.length) {
+          setActiveStep(activeStep + 1);
+        }
+        break;
     }
   }
 
@@ -142,11 +196,25 @@ export default function App() {
         return (
           <SelectVerification
             fhirClient={fhirClientRef.current}
-            setVerifyPhone={setVerifyPhone}
+            setVerifyContactPoint={setVerifyContactPoint}
             setVerifyMethod={setVerifyMethod}
             />
         );
-
+        // break;
+      case 3:
+        return (
+          <EnterCode
+            verificationCode={verificationCode}
+            setVerificationCode={setVerificationCode}
+            />
+        );
+        // break;
+      case 4:
+        return (
+          <ShowCredential
+            credential={credential}
+            />
+        );
         // break;
       default:
         return ('Not implemented');
@@ -163,7 +231,10 @@ export default function App() {
         return (selectedProvider === undefined);
         // break;
       case 2:
-        return (verifyPhone === undefined)
+        return (verifyContactPoint === undefined);
+        // break;
+      case 3:
+        return (verificationCode === '');
         // break;
       default:
         return (false);
@@ -173,11 +244,6 @@ export default function App() {
 
   return(
     <div className='App'>
-
-      {/* <Typography variant='h3' style={{margin: 10}}>
-        Welcome!
-      </Typography>
-      <br/> */}
 
       <Stepper
         activeStep={activeStep}

@@ -1,9 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 import Typography from '@material-ui/core/Typography';
-import { Button, IconButton, Select, MenuItem, FormControl, FormHelperText, } from '@material-ui/core';
+import { 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  FormHelperText, 
+  ExpansionPanel, 
+  ExpansionPanelSummary, 
+  ExpansionPanelDetails, 
+} from '@material-ui/core';
 
-import FHIR from 'fhirclient';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs'
@@ -11,7 +19,7 @@ import { Patient, ContactPoint } from '../util/fhir_selected';
 
 export interface SelectVerificationProps {
   fhirClient:any;
-  setVerifyPhone: ((phone: string) => void);
+  setVerifyContactPoint: ((contactPoint: ContactPoint) => void);
   setVerifyMethod: ((method: string) => void);
 }
 
@@ -35,18 +43,28 @@ export default function SelectVerification(props: SelectVerificationProps) {
 
           setPatient(JSON.stringify(result, null, 2));
 
+          // **** get a typed object for sanity ****
+
           let patient:Patient = result as Patient;
 
-          if ((patient.id) && 
-              (patient.name) &&
-              (patient.telecom)) {
+          // **** check for name, id, and telecom (contact points) ****
+
+          if (patient.telecom) {
             // **** update our contact points ****
 
             setContactPoints(patient.telecom!);
 
             if (patient.telecom!.length > 0) {
-              setSelectedContactPointIndex(0);
-              props.setVerifyPhone(patient.telecom![0].value!);
+              // **** check for a contact point with a telephone number ****
+
+              for (var i = 0; i < patient.telecom!.length; i++) {
+                if ((patient.telecom![i].system === 'phone') &&
+                    (patient.telecom![i].value)) {
+                  setSelectedContactPointIndex(i);
+                  props.setVerifyContactPoint(patient.telecom![i]);
+                  break;
+                }
+              }
             }
           }
         })
@@ -58,7 +76,6 @@ export default function SelectVerification(props: SelectVerificationProps) {
     }
   }, []);
 
-  
   function handleContactPointSelectChange(event: any) {
 
     let index:number = parseInt(event.target.value);
@@ -69,7 +86,7 @@ export default function SelectVerification(props: SelectVerificationProps) {
 
     // **** tell our parent the phone number ****
 
-    props.setVerifyPhone(contactPoints[index].value!);
+    props.setVerifyContactPoint(contactPoints[index]);
   }
 
   function handleVerifyMethodChange(event: any) {
@@ -79,22 +96,27 @@ export default function SelectVerification(props: SelectVerificationProps) {
 
   return(
     <div className='StepContent'>
-      
       <Typography variant='h6'>
-        Select Verification Info
+        Select Verification Method
       </Typography>
-
       { patient &&
-        <SyntaxHighlighter
-          language='json'
-          style={atomOneDark}
-          >
-          {patient}
-        </SyntaxHighlighter>
+        <ExpansionPanel>
+          <ExpansionPanelSummary
+            expandIcon={<ExpandMoreIcon />}
+            >
+            Patient Resource
+          </ExpansionPanelSummary>
+          <ExpansionPanelDetails>
+            <SyntaxHighlighter
+              language='json'
+              style={atomOneDark}
+              >
+              {patient}
+            </SyntaxHighlighter>
+          </ExpansionPanelDetails>
+        </ExpansionPanel>
       }
-
       <br />
-      
       <FormControl>
         <Select
           value={selectedContactPointIndex}
@@ -115,10 +137,10 @@ export default function SelectVerification(props: SelectVerificationProps) {
         </Select>
         <FormHelperText>Select a phone number to verify</FormHelperText>
       </FormControl>
-      <br/>
+      <br/><br/>
       <FormControl>
         <Select
-          value='sms'
+          value={selectedVerifyMethod}
           onChange={handleVerifyMethodChange}
           >
           <MenuItem key='method_sms' value='sms'>SMS</MenuItem>
@@ -126,8 +148,6 @@ export default function SelectVerification(props: SelectVerificationProps) {
         </Select>
         <FormHelperText>Select a verification method</FormHelperText>
       </FormControl>
-
-
     </div>
   );
 }

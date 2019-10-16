@@ -33,7 +33,7 @@
 pre {
   text-align: left;
   overflow: auto;
-  max-height: 500px;
+  /* max-height: 500px; */
   max-width: calc(100vw - 25px);
 }
 
