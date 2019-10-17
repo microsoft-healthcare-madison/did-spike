@@ -221,6 +221,22 @@ const store = createStore([store => {
     }
   }));
 
+  store.on("@changed", (...args) =>  {
+    console.log("Changed", store.get())
+  })
+
+  store.on("@dispatch", async (state, [event, data]) => {
+    if (event === 'verifications/add') {
+      const nextResult = await verificationEstablish(data);
+      store.dispatch(...nextResult)
+    } else if (event === 'verifications/establish') {
+      const nextResult = await verificationFhirResource(state.verifications[data.id]);
+      store.dispatch(...nextResult)
+    } else if (event === 'verifications/verify-fhir') {
+      const nextResult = await issueChallenge(state.verifications[data.id]);
+      store.dispatch(...nextResult)
+    }
+  })
 }])
 
 async function verificationFhirResource(v) {
@@ -372,23 +388,6 @@ async function issueChallenge(v) {
     return ['verifications/begin-verify-phone', { id: v.id, }];
  }
 
-store.on("@changed", (...args) =>  {
-  console.log("Changed", store.get())
-})
-
-store.on("@dispatch", async (state, [event, data]) => {
-  if (event === 'verifications/add') {
-    const nextResult = await verificationEstablish(data);
-    store.dispatch(...nextResult)
-  } else if (event === 'verifications/establish') {
-    const nextResult = await verificationFhirResource(state.verifications[data.id]);
-    store.dispatch(...nextResult)
-  } else if (event === 'verifications/verify-fhir') {
-    const nextResult = await issueChallenge(state.verifications[data.id]);
-    store.dispatch(...nextResult)
-  }
-
-})
 
 const v = createVerification({
   fhirBaseUrl: "https://r4.smarthealthit.org",
