@@ -159,7 +159,7 @@ export default function SelectVerification(props: SelectVerificationProps) {
           onChange={handleVerifyMethodChange}
           >
           <MenuItem key='method_sms' value='sms'>SMS</MenuItem>
-          <MenuItem key='method_voice' value='voice'>Voice</MenuItem>
+          <MenuItem key='method_call' value='call'>Voice</MenuItem>
         </Select>
         <FormHelperText>Select a verification method</FormHelperText>
       </FormControl>
