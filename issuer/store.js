@@ -41,6 +41,17 @@ export default createStore([
       setStatusForId(_verificationStates.CONTACT_VERIFIED)
     );
 
+    store.on("verification/credential-ready", ({verifications}, {id, credentialJws}) => ({
+        verifications: {
+          ...verifications,
+          [id]: {
+            ...verifications[id],
+            status: _verificationStates.ISSUED,
+            issuedCredential: credentialJws
+          }
+        }
+      }))
+
     store.on(
       "verifications/failed",
       ({ verifications }, { id, code, detail }) => ({
