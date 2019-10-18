@@ -1,7 +1,13 @@
 import createStore from "storeon";
 import { _verificationStates } from "./constants";
 
-const setStatusForId = status => ({ verifications }, { id }) => ({
+const setStatusForId = status => ({ verifications }, { id }) => {
+
+  if (verifications[id].status === _verificationStates.ERROR) {
+    return {}
+  }
+  
+  return {
   verifications: {
     ...verifications,
     [id]: {
@@ -9,7 +15,7 @@ const setStatusForId = status => ({ verifications }, { id }) => ({
       status
     }
   }
-});
+}};
 
 export default createStore([
   store => {
@@ -46,6 +52,7 @@ export default createStore([
       "verifications/begin-verify-phone",
       setStatusForId(_verificationStates.CONTACT_VERIFYING)
     );
+
     store.on(
       "verifications/complete-verify-phone",
       setStatusForId(_verificationStates.CONTACT_VERIFIED)
