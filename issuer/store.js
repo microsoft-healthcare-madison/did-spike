@@ -1,7 +1,5 @@
-const uuid = require("uuid");
-
 import createStore from "storeon";
-import { _errors, _verificationStates } from "./constants";
+import { _verificationStates } from "./constants";
 
 const setStatusForId = status => ({ verifications }, { id }) => ({
   verifications: {
@@ -22,9 +20,7 @@ export default createStore([
     store.on("verifications/add", ({ verifications }, v) => ({
       verifications: {
         ...verifications,
-        ...{
-          [v.id]: v
-        }
+        [v.id]: v
       }
     }));
 
@@ -47,13 +43,13 @@ export default createStore([
 
     store.on(
       "verifications/failed",
-      ({ verifications }, { id, error, detail }) => ({
+      ({ verifications }, { id, code, detail }) => ({
         verifications: {
           ...verifications,
           [id]: {
             ...verifications[id],
             status: _verificationStates.ERROR,
-            error,
+            error: code,
             detail
           }
         }
