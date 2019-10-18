@@ -102,10 +102,10 @@ export default class CredentialUtils {
 
     // **** check we are past the issuance date and before the expiration date ****
 
-    if (Date.now() < jws.nbf)
-      return this.validationFailureWithLog('Validation failed: nbf (Not BeFore) is in the future');
-    if (Date.now() > jws.exp)
-      return this.validationFailureWithLog('Validation failed: exp (EXPiration) is in the past');
+    if (Date.now() < (jws.nbf * 1000))
+      return this.validationFailureWithLog('Validation failed: nbf (not before) is in the future');
+    if (Date.now() > (jws.exp * 1000))
+      return this.validationFailureWithLog(`Validation failed: exp (experation - ${jws.exp}) is in the past (< ${Date.now()})`);
 
     // **** success ****
 
