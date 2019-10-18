@@ -18,6 +18,7 @@ import ShowCredential from './steps/ShowCredential';
 import { ConfirmationRequest } from './models/ConfirmationRequest';
 import CredentialUtils from './util/CredentialUtils';
 import SpikeVc from './models/SpikeVc';
+import WaitOnConfirmation from './steps/WaitOnConfirmation';
 
 // **** extend the Window to include our _env settings ****
 
@@ -32,7 +33,8 @@ export default function App() {
     'Connect to a Provider',  // 1
     'Select Verification',    // 2
     'Enter Code',             // 3
-    'Done'                    // 4
+    'Wait on Confirmation',   // 4
+    'Done'                    // 5
   ];
 
   const initialLoadRef = useRef<boolean>(true);
@@ -49,7 +51,6 @@ export default function App() {
 
   useEffect(() => {
     if (initialLoadRef.current) {
-
       // **** check to see if local storage has a did ****
 
       if (localStorage.getItem('did')) {
@@ -119,7 +120,7 @@ export default function App() {
     });
   }
 
-  async function getIssuerDID() {
+  async function getIssuerDid() {
 
     // **** ask the server for a DID to encrypt my request ****
 
@@ -149,16 +150,16 @@ export default function App() {
   async function requestVerification() {
     // **** get our issuer DID ****
 
-    let issuerDID = await getIssuerDID();
+    let issuerDid = await getIssuerDid();
 
-    if (!issuerDID) {
+    if (!issuerDid) {
       return;
     }
 
     // **** build our verification request ****
 
     let request:VerificationRequest = {
-      holderDID: identity!.did,
+      holderDid: identity!.did,
       fhirBaseUrl: fhirClientRef.current.state.serverUrl,
       authToken: fhirClientRef.current.state.tokenResponse.access_token,
       resourceType: 'Patient',
@@ -173,13 +174,13 @@ export default function App() {
 
     // **** encrypt our data for the issuer ****
 
-    let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
+    let encrypted:Encrypted = await identity!.encrypt(issuerDid, JSON.stringify(request));
 
     console.log('Encrypted', encrypted);
 
     // **** build the URL to POST to ****
 
-    let url:string = new URL('/verify', window._env.Issuer_Public_Url).toString();
+    let url:string = new URL('/CredentialRequest/new', window._env.Issuer_Public_Url).toString();
 
     console.log('URL', url);
  
@@ -200,7 +201,9 @@ export default function App() {
     if (response.ok) {
       // **** grab the body ****
 
-      let body: string = await response.text();
+      let encryptedBody: string = await response.text();
+
+      let body: string = identity!.decrypt(JSON.parse(encryptedBody)!);
 
       // **** log the response for now (debug) ****
   
@@ -226,7 +229,7 @@ export default function App() {
   async function checkVerificationCode() {
     // **** get our issuer DID ****
 
-    let issuerDID = await getIssuerDID();
+    let issuerDID = await getIssuerDid();
 
     if (!issuerDID) {
       return;
@@ -239,19 +242,19 @@ export default function App() {
       verificationCode: verificationCode,
     }
 
-    console.log('Confirmation', request);
+    console.log('checkVerificationCode.request', request);
 
     // **** encrypt our data for the issuer ****
 
     let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
 
-    console.log('Encrypted', encrypted);
+    console.log('checkVerificationCode.encrypted', encrypted);
 
     // **** build the URL to POST to ****
 
     let url:string = new URL('/confirm', window._env.Issuer_Public_Url).toString();
 
-    console.log('URL', url);
+    console.log('checkVerificationCode.url', url);
  
     // **** prepare our request ****
 
@@ -265,52 +268,19 @@ export default function App() {
       body: JSON.stringify(encrypted),
     });
 
-    let body: string = await response.text();
+    // // **** get the encrypted body ****
+
+    // let encryptedBody: string = await response.text();
+
+    // let body: string = identity!.decrypt(JSON.parse(encryptedBody));
 
     // **** check for successful response ****
 
     if (response.ok) {
-      // **** grab the body ****
+      console.log('checkVerificationCode ok!');
 
-      let body: string = await response.text();
-
-      // **** log the response for now (debug) ****
-  
-      console.log('Server returned', body);
-
-      // **** verify the JWT ****
-
-      let jwt:VerifiedJWT = verifyJWT(body);
-
-      if (!jwt) {
-        window.alert('Invalid JWT!');
-        return;
-      }
-
-      if (!jwt.payload) {
-        window.alert('JWT has no payload!');
-        return;
-      }
-
-      // **** check the payload ****
-
-      if (!CredentialUtils.validateJws(jwt.payload)) {
-        window.alert('Invalid JWT Payload!');
-        return;
-      }
-
-      let vc = CredentialUtils.jwsToVc(jwt.payload);
-
-      if (!vc) {
-        window.alert('JWT Payload cannot be converted to a Verifiable Credential!');
-        return;
-      }
-      // **** set our credential ****
-
-      setCredential(vc);
-  
       // **** move to next step ****
-  
+
       setActiveStep(activeStep + 1);
 
       return;
@@ -318,8 +288,125 @@ export default function App() {
 
     // **** request failed ****
 
-    console.log('Request failed', response);
+    console.log('checkVerificationCode Request failed', response);
     window.alert(`Confirmation request failed (${response.status})!`);
+  }
+
+  async function checkVerificationState():Promise<boolean> {
+    // **** get our issuer DID ****
+
+    let issuerDID = await getIssuerDid();
+
+    if (!issuerDID) {
+      return false;
+    }
+    
+    // **** build our verification confirmation request ****
+
+    let request:ConfirmationRequest = {
+      verificationId: verificationId,
+      verificationCode: verificationCode,
+    }
+
+    console.log('checkVerificationState.Confirmation', request);
+
+    // **** encrypt our data for the issuer ****
+
+    let encrypted:Encrypted = await identity!.encrypt(issuerDID, JSON.stringify(request));
+
+    console.log('checkVerificationState.encrypted', encrypted);
+    
+    // **** build the URL to for our status ****
+
+    let url:string = new URL('/credentialrequest/status', window._env.Issuer_Public_Url).toString();
+
+    console.log('checkVerificationState.url', url);
+
+    // **** prepare our request ****
+
+    let headers: Headers = new Headers();
+    headers.append('Accept', 'application/json');
+    headers.append('Content-Type', 'application/json');
+
+    let response: Response = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(encrypted),
+    });
+
+    // **** check for successful response ****
+
+    if (response.ok) {
+      // **** grab the returned content ****
+
+      let encryptedBody:any = JSON.parse(await response.text());
+
+      console.log('checkVerificationState.encryptedBody', encryptedBody);
+
+      // **** decrypt the data ****
+
+      let body:string = identity!.decrypt(encryptedBody);
+
+      // **** check our state ****
+
+      let status:VerificationRequest = JSON.parse(body);
+
+      console.log('checkVerificationState.status', status);
+
+      // **** check for an issued credential ****
+
+      if (status.issuedCredential) {
+        // **** check this JWT ****
+
+        if (await processJwt(status.issuedCredential)) {
+
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  async function processJwt(content: string):Promise<boolean> {
+    console.log('ProcessJwt content:', content);
+
+    // **** verify the JWT ****
+
+    let jwt:VerifiedJWT = verifyJWT(content);
+
+    if (!jwt) {
+      window.alert('Invalid JWT!');
+      return false;
+    }
+
+    if (!jwt.payload) {
+      window.alert('JWT has no payload!');
+      return false;
+    }
+
+    // **** check the payload ****
+
+    if (!CredentialUtils.validateJws(jwt.payload)) {
+      window.alert('Invalid JWT Payload!');
+      return false;
+    }
+
+    let vc = CredentialUtils.jwsToVc(jwt.payload);
+
+    if (!vc) {
+      window.alert('JWT Payload cannot be converted to a Verifiable Credential!');
+      return false;
+    }
+    // **** set our credential ****
+
+    setCredential(vc);
+
+    // **** move to next step ****
+
+    setActiveStep(activeStep + 1);
+
+    return true;
   }
 
   function handleNext() {
@@ -338,6 +425,10 @@ export default function App() {
       case 3:
         checkVerificationCode();
         break;
+
+      case 4:
+        break;
+
 
       default:
         if ((activeStep + 1) < steps.length) {
@@ -387,6 +478,13 @@ export default function App() {
         );
         // break;
       case 4:
+        return (
+          <WaitOnConfirmation
+            checkVerificationState={checkVerificationState}
+            />
+        );
+        // break;
+      case 5:
         return (
           <ShowCredential
             credential={credential}
