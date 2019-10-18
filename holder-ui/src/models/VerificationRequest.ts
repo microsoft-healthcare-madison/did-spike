@@ -9,4 +9,5 @@ export default interface VerificationRequest {
   contactPoint: ContactPoint;
   verificationMethod: string;
   issuedCredential?: string;
+  status?: string;
 }

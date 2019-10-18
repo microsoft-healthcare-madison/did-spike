@@ -13,8 +13,8 @@ export interface ConnectToProviderProps {
 export default function ConnectToProvider(props: ConnectToProviderProps) {
 
   const providers:HealthcareProvider[] = [
-    {name: 'SMART R4 Sandbox', fhirEndpointUrl:'http://launch.smarthealthit.org/v/r4/sim/eyJoIjoiMSIsImoiOiIxIn0/fhir'}
-    // {name: 'SMART R4 Sandbox', fhirEndpointUrl:'https://r4.smarthealthit.org'}
+    {name: 'SMART R4 Sandbox', fhirEndpointUrl:'http://launch.smarthealthit.org/v/r4/sim/eyJoIjoiMSIsImoiOiIxIn0/fhir'},
+    {name: 'SMART R4 Handel', fhirEndpointUrl: 'http://launch.smarthealthit.org/v/r4/sim/eyJrIjoiMSIsImoiOiIxIiwiYiI6IjUwNzA0NSJ9/fhir'},
   ];
 
   function handleProviderSelectChange(event: any) {

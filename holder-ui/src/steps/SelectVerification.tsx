@@ -23,8 +23,8 @@ import { Patient, ContactPoint } from '../util/fhir_selected';
 
 export interface SelectVerificationProps {
   fhirClient:any;
-  setVerifyContactPoint: ((contactPoint: ContactPoint) => void);
-  setVerifyMethod: ((method: string) => void);
+  setVerificationContactPoint: ((contactPoint: ContactPoint) => void);
+  setVerificationMethod: ((method: string) => void);
 }
 
 export default function SelectVerification(props: SelectVerificationProps) {
@@ -34,12 +34,12 @@ export default function SelectVerification(props: SelectVerificationProps) {
   const [patient, setPatient] = useState<string>();
   const [contactPoints, setContactPoints] = useState<ContactPoint[]>([]);
   const [selectedContactPointIndex, setSelectedContactPointIndex] = useState<number>(-1);
-  const [selectedVerifyMethod, setSelectedVerifyMethod] = useState<string>('sms');
+  const [selectedVerificationMethod, setSelectedVerificationMethod] = useState<string>('sms');
 
   useEffect(() => {
     if (initialLoadRef.current) {
       console.log('SelectVerification.useEffect patient:', `Patient/${props.fhirClient.patient.id}`);
-      
+
       // **** request a patient ****
 
       props.fhirClient.request(`Patient/${props.fhirClient.patient.id}`)
@@ -67,7 +67,7 @@ export default function SelectVerification(props: SelectVerificationProps) {
                 if ((patient.telecom![i].system === 'phone') &&
                     (patient.telecom![i].value)) {
                   setSelectedContactPointIndex(i);
-                  props.setVerifyContactPoint(patient.telecom![i]);
+                  props.setVerificationContactPoint(patient.telecom![i]);
                   break;
                 }
               }
@@ -92,12 +92,12 @@ export default function SelectVerification(props: SelectVerificationProps) {
 
     // **** tell our parent the phone number ****
 
-    props.setVerifyContactPoint(contactPoints[index]);
+    props.setVerificationContactPoint(contactPoints[index]);
   }
 
-  function handleVerifyMethodChange(event: any) {
-    setSelectedVerifyMethod(event.target.value);
-    props.setVerifyMethod(event.target.value);
+  function handleVerificationMethodChange(event: any) {
+    setSelectedVerificationMethod(event.target.value);
+    props.setVerificationMethod(event.target.value);
   }
 
   function copyDidToClipboard() {
@@ -157,8 +157,8 @@ export default function SelectVerification(props: SelectVerificationProps) {
       <br/><br/>
       <FormControl>
         <Select
-          value={selectedVerifyMethod}
-          onChange={handleVerifyMethodChange}
+          value={selectedVerificationMethod}
+          onChange={handleVerificationMethodChange}
           >
           <MenuItem key='method_sms' value='sms'>SMS</MenuItem>
           <MenuItem key='method_call' value='call'>Voice</MenuItem>

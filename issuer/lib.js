@@ -157,7 +157,7 @@ export async function issueChallenge(v, twilioService) {
       .verifications
       .create({
         to: v.request.contactPoint.value,
-        channel: v.request.verifyMethod
+        channel: v.request.verificationMethod
       })
     console.log("Twilio issued", twilioResponse)
   } catch (err) {

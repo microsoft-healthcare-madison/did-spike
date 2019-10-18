@@ -18,7 +18,7 @@ const initialRequest = {
     value: '555-258-5879',
     use: 'home'
   },
-  verifyMethod: 'sms'
+  verificationMethod: 'sms'
 }
 
 const getAndPrintStatus = async (serverDid, vcRequestId) => {

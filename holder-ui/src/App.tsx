@@ -43,8 +43,8 @@ export default function App() {
   const [activeStep, setActiveStep] = useState<number>(0);
   const [identity, setIdentity] = useState<NaCLIdentity>();
   const [selectedProvider, setSelectedProvider] = useState<string>();
-  const [verifyContactPoint, setVerifyContactPoint] = useState<ContactPoint>();
-  const [verifyMethod, setVerifyMethod] = useState<string>('sms');
+  const [verificationContactPoint, setVerificationContactPoint] = useState<ContactPoint>();
+  const [verificationMethod, setVerificationMethod] = useState<string>('sms');
   const [verificationCode, setVerificationCode] = useState<string>('');
   const [credential, setCredential] = useState<SpikeVc>();
   const [verificationId, setVerificationId] = useState<string>('');
@@ -165,8 +165,8 @@ export default function App() {
       authToken: fhirClientRef.current.state.tokenResponse.access_token,
       resourceType: 'Patient',
       resourceId: fhirClientRef.current.patient.id,
-      contactPoint: verifyContactPoint!,
-      verificationMethod: verifyMethod
+      contactPoint: verificationContactPoint!,
+      verificationMethod: verificationMethod
     }
 
     // **** log verification data for now (debug) ****
@@ -363,6 +363,12 @@ export default function App() {
           return true;
         }
       }
+
+      if (status.status === 'ERROR') {
+        window.alert('Invalid code, please try again')
+        setActiveStep(2);
+        return true;
+      }
     }
 
     return false;
@@ -464,8 +470,8 @@ export default function App() {
         return (
           <SelectVerification
             fhirClient={fhirClientRef.current}
-            setVerifyContactPoint={setVerifyContactPoint}
-            setVerifyMethod={setVerifyMethod}
+            setVerificationContactPoint={setVerificationContactPoint}
+            setVerificationMethod={setVerificationMethod}
             />
         );
         // break;
@@ -506,7 +512,7 @@ export default function App() {
         return (selectedProvider === undefined);
         // break;
       case 2:
-        return (verifyContactPoint === undefined);
+        return (verificationContactPoint === undefined);
         // break;
       case 3:
         return (verificationCode === '');
