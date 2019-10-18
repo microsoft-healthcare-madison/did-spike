@@ -94,16 +94,15 @@ const runTests = async () => {
   getAndPrintStatus(serverDid, vcRequestId)
 }
 
-console.log("App", server.settings)
 
 
-/*
 runTests().then(() => {
   console.log("Ran tests")
 }).catch(err => {
   console.log("Tests failed", err)
 })
 
+/*
 const { verificationId, verificationCode } = identity.encrypt(initialRequest);
 
 

@@ -1,9 +1,10 @@
 import createStore from "storeon";
 import { _verificationStates } from "./constants";
+import { tryStatement } from "@babel/types";
 
-const setStatusForId = status => ({ verifications }, { id }) => {
+const transitionStatus = (prevStatus, status) => ({ verifications }, { id }) => {
 
-  if (verifications[id].status === _verificationStates.ERROR) {
+  if (verifications[id].status !== prevStatus) {
     return {}
   }
   
@@ -32,7 +33,7 @@ export default createStore([
 
     store.on(
       "verifications/establish",
-      setStatusForId(_verificationStates.ESTABLISHED)
+      transitionStatus(_verificationStates.INIT, _verificationStates.ESTABLISHED)
     );
 
     store.on( "verifications/verify-fhir",
@@ -50,12 +51,12 @@ export default createStore([
 
     store.on(
       "verifications/begin-verify-phone",
-      setStatusForId(_verificationStates.CONTACT_VERIFYING)
+      transitionStatus(_verificationStates.FHIR_VERIFIED, _verificationStates.CONTACT_VERIFYING)
     );
 
     store.on(
       "verifications/complete-verify-phone",
-      setStatusForId(_verificationStates.CONTACT_VERIFIED)
+      transitionStatus(_verificationStates.CONTACT_VERIFYING, _verificationStates.CONTACT_VERIFIED)
     );
 
     store.on(
