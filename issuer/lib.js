@@ -24,6 +24,10 @@ export const fhirPatientHasContactPoint = (patient, contactPoint) =>
 
 export async function verificationFhirResource(v) {
 
+  if (!v.request.fhirBaseUrl.endsWith('/')) {
+    v.request.fhirBaseUrl += '/';
+  }
+
   let url = new URL(
     `${v.request.resourceType}/${v.request.resourceId}`,
     v.request.fhirBaseUrl
