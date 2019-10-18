@@ -4,6 +4,7 @@
   "description": "A DID issuing server.",
   "main": "did-issuing-server.js",
   "scripts": {
+    "watch": "nodemon -r esm did-issuing-server.js",
     "start": "node -r esm did-issuing-server.js",
     "test": "jest --passWithNoTests"
   },
@@ -23,6 +24,11 @@
     "express": "^4.17.1",
     "jest": "^24.9.0",
     "nacl-did": "^1.0.0",
+    "nodemon": "^1.19.4",
+    "storeon": "^0.9.5",
     "uuid": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^6.5.1"
   }
 }

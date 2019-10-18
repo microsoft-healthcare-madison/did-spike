@@ -1,106 +1,115 @@
 //const bodyParser = require('body-parser');
-const cors = require('cors');
-const express = require('express');
-const uuid = require('uuid');
+const cors = require("cors");
+const express = require("express");
+import { createIdentity } from "nacl-did";
+
+import {
+  createVerification,
+  verificationFhirResource,
+  verificationEstablish,
+  issueChallenge,
+  processChallengeResponse
+} from "./lib";
+
+import store from "./store";
+import twilio from "twilio";
+
 const app = express();
-
-// **** use PORT env variable or 3000 ****
+export default app;
 const port = process.env.PORT || 3000;
+const twilioConfig = {
+  accountSid: process.env.TWILIO_ACCOUNT_SID,
+  authToken: process.env.TWILIO_AUTH_TOKEN,
+  serviceId: process.env.TWILIO_SERVICE_ID
+};
 
-import { createIdentity } from 'nacl-did';
+const twilioClient = twilio(
+  twilioConfig.accountSid,
+  twilioConfig.authToken
+);
+const twilioService = twilioClient.verify.services(twilioConfig.serviceId);
 
 const identity = createIdentity();
 
-const verifications = new Map();
-
-class VerificationRequest {
-  constructor(request) {
-    this.creationTs = Date.now();
-    this.id = uuid.v4();
-    this.request = request;
-    verifications.set(this.id, this);
-    this.challenge = null;
-  }
-
-  establish() {
-    if (!this.verifyFhirServerAccess()) {
-      // TODO: failed to access server - we won't be sending any SMS messages
-      return false;
-    }
-    this.challenge = this.issueChallenge();
-  }
-
-  verifyFhirServerAccess() {
-    // TODO: confirm FHIR server access
-    return true;  // XXX
-  }
-
-  issueChallenge() {
-    // TODO: create (and send) a request through Twilio
-    // TODO: raise an exception if Twilio is down or the challenge fails to send
-    return null;  // XXX
-  }
-
-  processChallengeResponse(res) {
-    // TODO: pass a challenge response back through Twilio
-    return true;  // XXX
-  }
-}
-
-const confirm = (req, res) => {
-  const plain = identity.decrypt(req.body);
+const confirm = async (req, res) => {
+  const { verificationId, verificationCode } = identity.decrypt(req.body);
   // TODO: raise an exception if the body fails decryption.
-  const verificationID = plain.verificationID;
-  if (!verifications.has(verificationID)) {
-    res.send('LOL WUT - I dont know your verification id: ' + verificationID);
-    return;  // XXX - raise an excecption?
-  }
-  const verification = verifications.get(verificationID);
-  if (!verification.processChallengeResponse(req.body)) {
-    res.send('That code failed to pass the challenge response');
-    return;  // XXX - raise an exception?
-  }
+  const verification = store.get().verifications[verificationId];
+
+  const result = await processChallengeResponse(verification, verificationCode, twilioService);
+  store.dispatch(...result) 
 };
 
-// TODO: determine if app.all can be used to insert response headers without
-//       requiring any changes at the other handlers.
-function decorate(res) {
-  return res.set('did', identity.did);
-}
-
 const debug = (req, res) => {
-  decorate(res).send('<pre>' + JSON.stringify(identity, null, 2) + '</pre>');
-}
+  res.send("<pre>" + JSON.stringify(identity, null, 2) + "</pre>");
+};
 
 const did = (req, res) => {
-  decorate(res).send(identity.did);
-}
+  res.send(identity.did);
+};
 
+/**
+ * Handle a POST request to verify a contact point and FHIR resource access.
+ * Decrypt the request
+ * Return the ID of the internal verification object
+ */
 const verify = (req, res) => {
-  console.log(JSON.stringify(req.body, null, 2));  // XXX
+  console.log(JSON.stringify(req.body, null, 2)); // XXX
   // TODO: decrypt the request using the identity.
   const plain = identity.decrypt(req.body);
-  console.log(JSON.stringify(plain, null, 2));  // XXX
-  const request = new VerificationRequest(plain);
+  console.log(JSON.stringify(plain, null, 2)); // XXX
+  const v = createVerification(plain);
+  store.dispatch("verifications/add", v);
+
   // TODO: should the response be encrypted using the UI's DID?
-  if (request.establish()) {
-    decorate(res).send(request.id);
-  }
-}
+  res.send(request.id);
+};
 
 app.use(cors());
-app.use(express.urlencoded({extended: true}));
+
+app.use(function addDidResponseHeader(req, res, next) {
+  res.set("did", identity.did);
+  next();
+});
+
+app.use(
+  express.urlencoded({
+    extended: true
+  })
+);
 app.use(express.json());
 
+app.get("/", (req, res) => res.json(identity));
+app.post("/confirm", confirm);
+app.get("/did", did);
+app.get("/debug", debug);
+app.get("/check");
+app.post("/verify", verify);
 
-app.get('/', (req, res) => res.json(identity));
-app.post('/confirm', confirm);
-app.get('/did', did);
-app.get('/debug', debug);
-app.post('/verify', verify);
-
-app.use(function (req, res, next) {
-  decorate(res).status(404).send("Sorry can't find that!")
+app.use(function(req, res, next) {
+  res.status(404).send("Sorry can't find that!");
 });
 
 app.listen(port, () => console.log(`http://localhost:${port}`));
+
+store.on("@changed", (...args) => {
+  console.log("Changed", store.get());
+});
+
+store.on("@dispatch", async (state, [event, data]) => {
+  if (event === "verifications/add") {
+    const nextResult = await verificationEstablish(data);
+    store.dispatch(...nextResult);
+  } else if (event === "verifications/establish") {
+    const nextResult = await verificationFhirResource(
+      state.verifications[data.id]
+    );
+    store.dispatch(...nextResult);
+  } else if (event === "verifications/verify-fhir") {
+    const nextResult = await issueChallenge(
+      state.verifications[data.id],
+      twilioService
+    );
+    store.dispatch(...nextResult);
+  }
+});
