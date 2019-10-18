@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 
 import './App.css';
 
-import { createIdentity, NaCLIdentity, Encrypted, loadIdentity } from 'nacl-did'
+import { createIdentity, NaCLIdentity, Encrypted, loadIdentity, verifyJWT, VerifiedJWT } from 'nacl-did'
 
 import { Stepper, StepLabel, Step, Button } from '@material-ui/core';
 
@@ -16,6 +16,8 @@ import { ContactPoint } from './util/fhir_selected';
 import EnterCode from './steps/EnterCode';
 import ShowCredential from './steps/ShowCredential';
 import { ConfirmationRequest } from './models/ConfirmationRequest';
+import CredentialUtils from './util/CredentialUtils';
+import SpikeVc from './models/SpikeVc';
 
 // **** extend the Window to include our _env settings ****
 
@@ -42,7 +44,7 @@ export default function App() {
   const [verifyContactPoint, setVerifyContactPoint] = useState<ContactPoint>();
   const [verifyMethod, setVerifyMethod] = useState<string>('sms');
   const [verificationCode, setVerificationCode] = useState<string>('');
-  const [credential, setCredential] = useState<string>('');
+  const [credential, setCredential] = useState<SpikeVc>();
   const [verificationId, setVerificationId] = useState<string>('');
 
   useEffect(() => {
@@ -145,7 +147,6 @@ export default function App() {
 
 
   async function requestVerification() {
-
     // **** get our issuer DID ****
 
     let issuerDID = await getIssuerDID();
@@ -223,7 +224,6 @@ export default function App() {
   }
 
   async function checkVerificationCode() {
-
     // **** get our issuer DID ****
 
     let issuerDID = await getIssuerDID();
@@ -276,11 +276,38 @@ export default function App() {
 
       // **** log the response for now (debug) ****
   
-      console.log('Credential:', body);
+      console.log('Server returned', body);
 
-      // **** set our verification id ****
+      // **** verify the JWT ****
 
-      setCredential(body);
+      let jwt:VerifiedJWT = verifyJWT(body);
+
+      if (!jwt) {
+        window.alert('Invalid JWT!');
+        return;
+      }
+
+      if (!jwt.payload) {
+        window.alert('JWT has no payload!');
+        return;
+      }
+
+      // **** check the payload ****
+
+      if (!CredentialUtils.validateJws(jwt.payload)) {
+        window.alert('Invalid JWT Payload!');
+        return;
+      }
+
+      let vc = CredentialUtils.jwsToVc(jwt.payload);
+
+      if (!vc) {
+        window.alert('JWT Payload cannot be converted to a Verifiable Credential!');
+        return;
+      }
+      // **** set our credential ****
+
+      setCredential(vc);
   
       // **** move to next step ****
   
