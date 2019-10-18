@@ -33,7 +33,7 @@ export async function verificationFhirResource(v) {
 
   let headers = new Headers();
   headers.append('Accept', 'application/fhir+json');
-  headers.append('Authorization', v.request.authToken);
+  headers.append('Authorization', 'Bearer ' + v.request.authToken);
 
   // **** issue our request ****
 
