@@ -38,6 +38,7 @@ const confirm = async (req, res) => {
 
   const result = await processChallengeResponse(verification, verificationCode, twilioService);
   store.dispatch(...result) 
+  res.json({confirming: true})
 };
 
 const debug = (req, res) => {
@@ -58,11 +59,12 @@ const verify = (req, res) => {
   // TODO: decrypt the request using the identity.
   const plain = identity.decrypt(req.body);
   console.log(JSON.stringify(plain, null, 2)); // XXX
+
   const v = createVerification(plain);
   store.dispatch("verifications/add", v);
 
   // TODO: should the response be encrypted using the UI's DID?
-  res.send(request.id);
+  res.send(v.id);
 };
 
 app.use(cors());
@@ -84,15 +86,23 @@ app.post("/confirm", confirm);
 app.get("/did", did);
 app.get("/debug", debug);
 app.get("/check");
-app.post("/verify", verify);
+app.post("/CredentialRequest/new", verify);
 
+app.post("/CredentialRequest/status", (req, res) => {
+  const plain = identity.decrypt(req.body);
+  const verification = store.get().verifications[plain.id]
+  res.send(verification)
+});
+
+
+// eslint-disable-next-line no-unused-vars
 app.use(function(req, res, next) {
   res.status(404).send("Sorry can't find that!");
 });
 
 app.listen(port, () => console.log(`http://localhost:${port}`));
 
-store.on("@changed", (...args) => {
+store.on("@changed", () => {
   console.log("Changed", store.get());
 });
 
@@ -113,3 +123,13 @@ store.on("@dispatch", async (state, [event, data]) => {
     store.dispatch(...nextResult);
   }
 });
+
+const v = createVerification({
+  fhirBaseUrl: "https://r4.smarthealthit.org",
+  resourceType: "Patient",
+  resourceId: "835a3b08-e3b6-49c4-a23f-1fac8dc7a7a7",
+  contactPoint: { system: 'phone', value: '555-258-5879', use: 'home' },
+  verifyMethod: 'sms'
+})
+
+store.dispatch('verifications/add', v)

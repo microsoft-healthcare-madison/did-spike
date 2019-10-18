@@ -9,8 +9,10 @@ export const _verificationStates = {
   FHIR_VERIFIED: 'FHIR_VERIFIED',
   /** Waiting on user to input code */
   CONTACT_VERIFYING: 'CONTACT_VERIFYING',
-  /** Done! */
+  /** Verified everything! */
   CONTACT_VERIFIED: 'CONTACT_VERIFIED',
+  /**Issued credential! */
+  ISSUED: 'ISSUED',
   /** Failed! */
   ERROR: 'ERROR',
 }

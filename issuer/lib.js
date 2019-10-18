@@ -13,7 +13,6 @@ export const fhirPatientHasContactPoint = (patient, contactPoint) =>
   }
 ).length > 0
 
-
 export async function verificationFhirResource(v) {
 
   let url = new URL(
