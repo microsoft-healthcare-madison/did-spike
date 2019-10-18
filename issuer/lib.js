@@ -142,8 +142,6 @@ export const verificationEstablish = async v => {
 
 export async function issueChallenge(v, twilioService) {
     // TODO: raise an exception if Twilio is down or the challenge fails to send
-    return ['verifications/begin-verify-phone', { id: v.id, }];
-
     console.log("Twilio issue", v.request.contactPoint.value, v.request.verifyMethod)
     try {
     const twilioResponse = await twilioService
@@ -153,7 +151,6 @@ export async function issueChallenge(v, twilioService) {
         channel: v.request.verifyMethod
       })
       console.log("Twilio issued", twilioResponse)
-
     } catch(err) {
       console.log("Twilio err", err)
       return ['verifications/failed', {
@@ -206,9 +203,8 @@ return ['verifications/credential-ready', {
 
  export async function processChallengeResponse(v, verificationCode, twilioService) {
 
-    return ['verifications/complete-verify-phone', { id: v.id, }]
-
    // TODO: pass a challenge response back through Twilio
+  try {
    const twilioResponse = await twilioService
      .verificationChecks
      .create({
@@ -224,6 +220,15 @@ return ['verifications/credential-ready', {
       }]
 
      }
+
+    } catch(err) {
+      return ['verifications/failed', {
+        id: v.id,
+        code: _errors.FAILED_PHONE_VERIFICATION,
+        detail: `Twilio API call failed: ${err}`
+      }]
+    }
+
 
     return ['verifications/complete-verify-phone', { id: v.id, }]
  }

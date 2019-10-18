@@ -21,14 +21,28 @@ const port = process.env.PORT || 3000;
 const twilioConfig = {
   accountSid: process.env.TWILIO_ACCOUNT_SID,
   authToken: process.env.TWILIO_AUTH_TOKEN,
-  serviceId: process.env.TWILIO_SERVICE_ID
+  serviceId: process.env.TWILIO_SERVICE_ID,
+  enabled: process.env.TWILIO_ENABLED !== 'false'
 };
 
-const twilioClient = twilio(
-  twilioConfig.accountSid,
-  twilioConfig.authToken
-);
-const twilioService = twilioClient.verify.services(twilioConfig.serviceId);
+
+let twilioService;
+if (twilioConfig.enabled) {
+  const twilioClient = twilio(
+    twilioConfig.accountSid,
+    twilioConfig.authToken
+  );
+  twilioService = twilioClient.verify.services(twilioConfig.serviceId);
+} else {
+  twilioService = {
+    verifications: {
+      create: () => Promise.resolve({skipped: true})
+    },
+    verificationChecks:  {
+      create: () => Promise.resolve({skipped: true, status: 'approved'})
+    }
+  }
+}
 
 const identity = createIdentity();
 
@@ -41,10 +55,6 @@ const confirm = async (req, res) => {
   const result = await processChallengeResponse(verification, verificationCode, twilioService);
   store.dispatch(...result) 
   res.json({confirming: true})
-};
-
-const debug = (req, res) => {
-  res.send("<pre>" + JSON.stringify(identity, null, 2) + "</pre>");
 };
 
 const did = (req, res) => {
@@ -89,11 +99,8 @@ app.use(
 
 app.use(express.json());
 
-app.get("/", (req, res) => res.json(identity));
 app.post("/confirm", confirm);
 app.get("/did", did);
-app.get("/debug", debug);
-app.get("/check");
 
 app.post("/CredentialRequest/new", begin);
 
