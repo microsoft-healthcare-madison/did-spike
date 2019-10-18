@@ -38,6 +38,8 @@ export default function SelectVerification(props: SelectVerificationProps) {
 
   useEffect(() => {
     if (initialLoadRef.current) {
+      console.log('SelectVerification.useEffect patient:', `Patient/${props.fhirClient.patient.id}`);
+      
       // **** request a patient ****
 
       props.fhirClient.request(`Patient/${props.fhirClient.patient.id}`)

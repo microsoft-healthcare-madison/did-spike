@@ -90,7 +90,7 @@ export default class CredentialUtils {
     // **** check for required fields ****
 
     if (!this.checkRequiredField(jws, 'iss')) return false;
-    if (!this.checkRequiredField(jws, 'jti')) return false;
+    // if (!this.checkRequiredField(jws, 'jti')) return false;
     if (!this.checkRequiredField(jws, 'sub')) return false;
     if (!this.checkRequiredField(jws, 'exp')) return false;
     if (!this.checkRequiredField(jws, 'nbf')) return false;

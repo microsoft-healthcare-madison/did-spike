@@ -75,6 +75,7 @@ export default function App() {
 
       if (localStorage.getItem('providerUrl')) {
         setSelectedProvider(localStorage.getItem('providerUrl')!);
+        console.log('App.useEffect, loaded provider URL', localStorage.getItem('providerUrl'));
       }
 
       // **** check for a SMART return ****
@@ -303,12 +304,11 @@ export default function App() {
     
     // **** build our verification confirmation request ****
 
-    let request:ConfirmationRequest = {
-      verificationId: verificationId,
-      verificationCode: verificationCode,
+    let request:any = {
+      id: verificationId,
     }
 
-    console.log('checkVerificationState.Confirmation', request);
+    console.log('checkVerificationState.request', request);
 
     // **** encrypt our data for the issuer ****
 
