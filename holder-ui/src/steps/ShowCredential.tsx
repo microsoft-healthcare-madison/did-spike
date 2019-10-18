@@ -9,15 +9,18 @@ import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs'
 import { CopyHelper } from '../util/CopyHelper';
 
 import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
+import SpikeVc from '../models/SpikeVc';
 
 export interface ShowCrendtialProps {
-  credential: string;
+  credential: SpikeVc|undefined;
 }
 
 export default function ShowCredential(props: ShowCrendtialProps) {
 
+  let vcJson = JSON.stringify(props.credential, null, 2);
+
   function copyDidToClipboard() {
-    CopyHelper.copyToClipboard(props.credential);
+    CopyHelper.copyToClipboard(vcJson);
   }
 
   return(
@@ -39,7 +42,7 @@ export default function ShowCredential(props: ShowCrendtialProps) {
         language='json'
         style={atomOneDark}
         >
-        {props.credential ? props.credential : ''}
+        {vcJson ? vcJson : ''}
       </SyntaxHighlighter>
 
     </div>
