@@ -162,13 +162,13 @@ export async function issueChallenge(v, twilioService) {
     return ['verifications/begin-verify-phone', { id: v.id, }];
  }
 
- export async function processChallengeResponse(v, twilioService) {
+ export async function processChallengeResponse(v, verificationCode, twilioService) {
    // TODO: pass a challenge response back through Twilio
    const twilioResponse = await twilioService
      .verificationChecks
      .create({
        to: v.request.contactPoint.value,
-       code: v.request.verifyMethod
+       code: verificationCode
      })
 
      if (twilioResponse.status !== 'approved') {

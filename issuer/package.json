@@ -27,5 +27,8 @@
     "nodemon": "^1.19.4",
     "storeon": "^0.9.5",
     "uuid": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^6.5.1"
   }
 }
