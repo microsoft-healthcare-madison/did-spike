@@ -2,7 +2,6 @@ import server from './did-issuing-server.js'
 import { createVerification } from './lib'
 import store from './store'
 import fetch, {
-  Headers
 } from 'node-fetch'
 
 import {
@@ -95,14 +94,15 @@ const runTests = async () => {
   getAndPrintStatus(serverDid, vcRequestId)
 }
 
-//console.log("App", server)
+console.log("App", server.settings)
 
+
+/*
 runTests().then(() => {
   console.log("Ran tests")
 }).catch(err => {
   console.log("Tests failed", err)
 })
-/*
 
 const { verificationId, verificationCode } = identity.encrypt(initialRequest);
 

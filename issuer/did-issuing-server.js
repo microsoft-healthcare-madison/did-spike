@@ -1,4 +1,3 @@
-//const bodyParser = require('body-parser');
 const cors = require("cors");
 const express = require("express");
 import { createIdentity } from "nacl-did";
