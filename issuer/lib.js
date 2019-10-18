@@ -1,4 +1,5 @@
 import  fetch, {Headers} from 'node-fetch'
+import  {convertJwsToVc, convertVcToJws, signJws} from './vcToJws'
 import { _errors, _verificationStates } from "./constants";
 const uuid = require("uuid");
 
@@ -136,8 +137,13 @@ export const verificationEstablish = async v => {
     }]
 
 }
+
+
+
 export async function issueChallenge(v, twilioService) {
     // TODO: raise an exception if Twilio is down or the challenge fails to send
+    return ['verifications/begin-verify-phone', { id: v.id, }];
+
     console.log("Twilio issue", v.request.contactPoint.value, v.request.verifyMethod)
     try {
     const twilioResponse = await twilioService
@@ -161,7 +167,47 @@ export async function issueChallenge(v, twilioService) {
     return ['verifications/begin-verify-phone', { id: v.id, }];
  }
 
+export async function issueCredential(v, signerIdentity) {
+
+  const issued = new Date();
+  const expires = new Date(issued);
+  expires.setFullYear(expires.getFullYear() + 1);
+
+
+  const vc = {
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1", 
+    "our-context-for-fhir-claims" 
+  ], 
+  "type": ["VerifiableCredential", "FhirPatientCredential"], 
+  "issuer": "https://our-demo.org/", 
+  "issuanceDate": issued.toISOString(),
+  "expirationDate": expires.toISOString(),
+  "credentialSubject": { 
+    "id": v.request.holderDid, 
+    "hasVerifiedContactPoint": v.request.contactPoint, 
+    "hasAccessToFhirResource": v.retrievedFhirResourceBody
+  },
+  "credentialSchema": { 
+    "id": "our-json-schema", 
+    "type": "JsonSchemaValidator2018" 
+  }
+} 
+
+const jws = convertVcToJws(vc);
+const signed = signJws(jws, signerIdentity)
+return ['verifications/credential-ready', {
+    id: v.id,
+    issuedCredential: signed
+  }]
+
+} 
+
+
  export async function processChallengeResponse(v, verificationCode, twilioService) {
+
+    return ['verifications/complete-verify-phone', { id: v.id, }]
+
    // TODO: pass a challenge response back through Twilio
    const twilioResponse = await twilioService
      .verificationChecks
@@ -189,6 +235,6 @@ export const createVerification = (request) => ({
     challenge: null,
     retrievedFhirResourceBody: null,
     status: _verificationStates.INIT,
-    error: null
+    error: null,
 })
 

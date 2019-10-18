@@ -6,7 +6,9 @@
   "scripts": {
     "watch": "nodemon -r esm did-issuing-server.js",
     "start": "node -r esm did-issuing-server.js",
-    "test": "jest --passWithNoTests"
+    "_test": "jest --passWithNoTests",
+    "test": "node -r esm test.js"
+    
   },
   "repository": {
     "type": "git",
