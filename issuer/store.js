@@ -28,10 +28,20 @@ export default createStore([
       "verifications/establish",
       setStatusForId(_verificationStates.ESTABLISHED)
     );
-    store.on(
-      "verifications/verify-fhir",
-      setStatusForId(_verificationStates.FHIR_VERIFIED)
+
+    store.on( "verifications/verify-fhir",
+      ({ verifications }, { id, resourceBody }) => ({
+        verifications: {
+          ...verifications,
+          [id]: {
+            ...verifications[id],
+            status: _verificationStates.FHIR_VERIFIED,
+            retrievedFhirResourceBody: resourceBody
+          }
+        }
+      })
     );
+
     store.on(
       "verifications/begin-verify-phone",
       setStatusForId(_verificationStates.CONTACT_VERIFYING)
@@ -41,16 +51,19 @@ export default createStore([
       setStatusForId(_verificationStates.CONTACT_VERIFIED)
     );
 
-    store.on("verification/credential-ready", ({verifications}, {id, credentialJws}) => ({
+    store.on(
+      "verifications/credential-ready",
+      ({ verifications }, { id, issuedCredential }) => ({
         verifications: {
           ...verifications,
           [id]: {
             ...verifications[id],
             status: _verificationStates.ISSUED,
-            issuedCredential: credentialJws
+            issuedCredential
           }
         }
-      }))
+      })
+    );
 
     store.on(
       "verifications/failed",

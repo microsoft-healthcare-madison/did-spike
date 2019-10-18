@@ -8,6 +8,7 @@ import {
   verificationFhirResource,
   verificationEstablish,
   issueChallenge,
+  issueCredential,
   processChallengeResponse
 } from "./lib";
 
@@ -20,29 +21,40 @@ const port = process.env.PORT || 3000;
 const twilioConfig = {
   accountSid: process.env.TWILIO_ACCOUNT_SID,
   authToken: process.env.TWILIO_AUTH_TOKEN,
-  serviceId: process.env.TWILIO_SERVICE_ID
+  serviceId: process.env.TWILIO_SERVICE_ID,
+  enabled: process.env.TWILIO_ENABLED !== 'false'
 };
 
-const twilioClient = twilio(
-  twilioConfig.accountSid,
-  twilioConfig.authToken
-);
-const twilioService = twilioClient.verify.services(twilioConfig.serviceId);
+
+let twilioService;
+if (twilioConfig.enabled) {
+  const twilioClient = twilio(
+    twilioConfig.accountSid,
+    twilioConfig.authToken
+  );
+  twilioService = twilioClient.verify.services(twilioConfig.serviceId);
+} else {
+  twilioService = {
+    verifications: {
+      create: () => Promise.resolve({skipped: true})
+    },
+    verificationChecks:  {
+      create: () => Promise.resolve({skipped: true, status: 'approved'})
+    }
+  }
+}
 
 const identity = createIdentity();
 
 const confirm = async (req, res) => {
-  const { verificationId, verificationCode } = identity.decrypt(req.body);
+  const { verificationId, verificationCode } = JSON.parse(identity.decrypt(req.body));
   // TODO: raise an exception if the body fails decryption.
+  console.log("confirming phone number for", req.body, verificationId, verificationCode)
   const verification = store.get().verifications[verificationId];
 
   const result = await processChallengeResponse(verification, verificationCode, twilioService);
   store.dispatch(...result) 
   res.json({confirming: true})
-};
-
-const debug = (req, res) => {
-  res.send("<pre>" + JSON.stringify(identity, null, 2) + "</pre>");
 };
 
 const did = (req, res) => {
@@ -54,17 +66,22 @@ const did = (req, res) => {
  * Decrypt the request
  * Return the ID of the internal verification object
  */
-const verify = (req, res) => {
-  console.log(JSON.stringify(req.body, null, 2)); // XXX
+const begin = async (req, res) => {
+  console.log("begin with body", JSON.stringify(req.body, null, 2)); // XXX
   // TODO: decrypt the request using the identity.
-  const plain = identity.decrypt(req.body);
+
+  const plain = JSON.parse(identity.decrypt(req.body));
   console.log(JSON.stringify(plain, null, 2)); // XXX
 
-  const v = createVerification(plain);
+  const v = createVerification({
+    ...plain,
+    holderDid: req.body.from
+  });
   store.dispatch("verifications/add", v);
 
   // TODO: should the response be encrypted using the UI's DID?
-  res.send(v.id);
+  const ret = await identity.encrypt(req.body.from, v.id)
+  res.send(ret);
 };
 
 app.use(cors());
@@ -79,19 +96,26 @@ app.use(
     extended: true
   })
 );
+
 app.use(express.json());
 
-app.get("/", (req, res) => res.json(identity));
 app.post("/confirm", confirm);
 app.get("/did", did);
-app.get("/debug", debug);
-app.get("/check");
-app.post("/CredentialRequest/new", verify);
 
-app.post("/CredentialRequest/status", (req, res) => {
-  const plain = identity.decrypt(req.body);
+app.post("/CredentialRequest/new", begin);
+
+app.post("/CredentialRequest/status", async (req, res) => {
+  const plain = JSON.parse(identity.decrypt(req.body));
   const verification = store.get().verifications[plain.id]
-  res.send(verification)
+
+  const senderDid = req.body.from
+
+  if (verification.request.holderDid !== senderDid) {
+    throw new Error("Can't request info on someone else's credential")
+  }
+
+  const ret = await identity.encrypt(senderDid, JSON.stringify(verification))
+  res.send(ret)
 });
 
 
@@ -103,7 +127,7 @@ app.use(function(req, res, next) {
 app.listen(port, () => console.log(`http://localhost:${port}`));
 
 store.on("@changed", () => {
-  console.log("Changed", store.get());
+ //console.log("Changed", store.get());
 });
 
 store.on("@dispatch", async (state, [event, data]) => {
@@ -120,6 +144,9 @@ store.on("@dispatch", async (state, [event, data]) => {
       state.verifications[data.id],
       twilioService
     );
+    store.dispatch(...nextResult);
+  } else if (event === "verifications/complete-verify-phone") {
+    const nextResult = await issueCredential(state.verifications[data.id], identity);
     store.dispatch(...nextResult);
   }
 });

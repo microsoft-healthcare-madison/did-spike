@@ -4,7 +4,7 @@ var fs = require('fs');
 
 const deepCopy = a => JSON.parse(JSON.stringify(a))
 
-function convertVcToJws(vc) {
+export function convertVcToJws(vc) {
   // **** start with basic fields ****
 
   let jws = {
@@ -49,7 +49,7 @@ function convertVcToJws(vc) {
 
 const unixToIso = s => new Date(s * 1000).toISOString()
 
-function convertJwsToVc(jws) {
+export function convertJwsToVc(jws) {
   return {
     ...deepCopy(jws.vc),
     issuer: jws.iss,
@@ -63,7 +63,7 @@ function convertJwsToVc(jws) {
   }
 }
 
-function signJws(jws, identity) {
+export function signJws(jws, identity) {
   jws.iss = identity.did;
   return identity.createJWT(jws);
 }
