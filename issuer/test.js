@@ -7,6 +7,7 @@ import { createIdentity } from "nacl-did";
 const identity = createIdentity();
 
 
+
 const initialRequest ={
   fhirBaseUrl: "https://r4.smarthealthit.org",
   resourceType: "Patient",
@@ -20,7 +21,6 @@ const getAndPrintStatus = async (serverDid, vcRequestId) => {
      id: vcRequestId
    }))
 
-
    const vcRequestStatus = await fetch('http://localhost:3000/CredentialRequest/status', {
     method: 'POST',
     body: JSON.stringify(statusBody),
@@ -29,7 +29,9 @@ const getAndPrintStatus = async (serverDid, vcRequestId) => {
     }
    }).then(r=>r.json())
 
-   console.log("Req status", vcRequestStatus)
+   const statusDecrypted = JSON.parse(identity.decrypt(vcRequestStatus))
+
+   console.log("Req status", statusDecrypted)
 
    return;
 }
@@ -43,13 +45,15 @@ const runTests = async() => {
   console.log("REquestsing", requestBody)
 
 
-  const vcRequestId = await fetch('http://localhost:3000/CredentialRequest/new', {
+  const vcRequestIdEncrypted = await fetch('http://localhost:3000/CredentialRequest/new', {
     method: 'POST',
     body: JSON.stringify(requestBody),
     headers: {
       'Content-Type': "application/json"
     }
-   }).then(r=>r.text())
+   }).then(r=>r.json())
+
+   const vcRequestId = identity.decrypt(vcRequestIdEncrypted)
 
    getAndPrintStatus(serverDid, vcRequestId)
 
@@ -85,13 +89,15 @@ const runTests = async() => {
    getAndPrintStatus(serverDid, vcRequestId)
 }
 
+//console.log("App", server)
+
 runTests().then(() => {
   console.log("Ran tests")
 }).catch(err => {
   console.log("Tests failed", err)
 })
-
 /*
+
 const { verificationId, verificationCode } = identity.encrypt(initialRequest);
 
 

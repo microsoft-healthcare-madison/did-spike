@@ -56,7 +56,7 @@ const did = (req, res) => {
  * Decrypt the request
  * Return the ID of the internal verification object
  */
-const begin = (req, res) => {
+const begin = async (req, res) => {
   console.log("begin with body", JSON.stringify(req.body, null, 2)); // XXX
   // TODO: decrypt the request using the identity.
 
@@ -70,7 +70,8 @@ const begin = (req, res) => {
   store.dispatch("verifications/add", v);
 
   // TODO: should the response be encrypted using the UI's DID?
-  res.send(v.id);
+  const ret = await identity.encrypt(req.body.from, v.id)
+  res.send(ret);
 };
 
 app.use(cors());
@@ -85,6 +86,7 @@ app.use(
     extended: true
   })
 );
+
 app.use(express.json());
 
 app.get("/", (req, res) => res.json(identity));
@@ -92,15 +94,21 @@ app.post("/confirm", confirm);
 app.get("/did", did);
 app.get("/debug", debug);
 app.get("/check");
+
 app.post("/CredentialRequest/new", begin);
 
-app.post("/CredentialRequest/status", (req, res) => {
-  console.log("REceveid status request")
+app.post("/CredentialRequest/status", async (req, res) => {
   const plain = JSON.parse(identity.decrypt(req.body));
-  console.log("STatus request deets", plain, plain.id)
   const verification = store.get().verifications[plain.id]
-  console.log("Got verification")
-  res.json(verification)
+
+  const senderDid = req.body.from
+
+  if (verification.request.holderDid !== senderDid) {
+    throw new Error("Can't request info on someone else's credential")
+  }
+
+  const ret = await identity.encrypt(senderDid, JSON.stringify(verification))
+  res.send(ret)
 });
 
 
