@@ -25,7 +25,7 @@
     "express": "^4.17.1",
     "jest": "^24.9.0",
     "nacl-did": "^1.0.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "nodemon": "^1.19.4",
     "storeon": "^0.9.5",
     "twilio": "^3.36.0",
